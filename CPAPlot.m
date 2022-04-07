@@ -33,6 +33,7 @@ KEY=hex2dec(['00'; '01'; '02'; '03'; '04'; '05'; '06'; '07'; '08'; '09'; '0a'; '
 FOLDER_NAME                 = datestr(now,'yyyymmmmdd_HHMMSS');
 PT_FILE_FORMAT              = '%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X \n';
 PT_FILE_NAME                = 'text_in.txt';
+WAVE_FILE_NAME              = 'wave.data';
 %%% variables
 X1=1;
 Pt=0;
@@ -81,6 +82,12 @@ if(FILE_GENERATION == 1)
         end
         fprintf(fileID,'%s \n',PtFileStr(i, 16));
     end
+    fclose(fileID);
+    
+    fileID = fopen([path WAVE_FILE_NAME],'w');
+    fwrite(fileID, WaveFile,'float');
+    fclose(fileID);
+    
 end
     
 %% Conduct CPA Attacks
