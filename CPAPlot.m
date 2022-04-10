@@ -21,19 +21,21 @@ sbox = [ ...
 
 %% Parameters
 NUM_ENC                     = 25000;  
-NUM_SAMPLES                 = 10;  %% how many samples need for
+NUM_SAMPLES                 = 20;  %% how many samples need for
 SNR                         = 10; %% this value is in dB; so careful. 
 POSITION_TO_ADD_POWER_VALUE =  0; %[0 to NUMSAMPLES-1]
 KEY_INDEX                   =  15; %% [0 - 15]
-ADD_NOISE                   =  0;  %% 0 or 1
+ADD_NOISE                   =  0;  %% 0 or 1  TODO
 FILE_GENERATION             =  1;  %% 0 or 1
 CPA_ATTACKS                 =  1;
 PLOT_RESULTS                =  1;
+WAVE_FILE_RANDOMFILL        =  1;
 KEY=hex2dec(['00'; '01'; '02'; '03'; '04'; '05'; '06'; '07'; '08'; '09'; '0a'; '0b'; '0c'; '0d'; '0e'; 'f0']);
 FOLDER_NAME                 = datestr(now,'yyyymmmmdd_HHMMSS');
 PT_FILE_FORMAT              = '%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X \n';
 PT_FILE_NAME                = 'text_in.txt';
 WAVE_FILE_NAME              = 'wave.data';
+
 %%% variables
 X1=1;
 Pt=0;
@@ -63,7 +65,11 @@ end
 %% Save to file 
 if(FILE_GENERATION == 1)
     PtFile   = ones(16, NUM_ENC);
-    WaveFile = randi(16, NUM_ENC, NUM_SAMPLES); 
+    if(WAVE_FILE_RANDOMFILL==1)
+        WaveFile = randi(16, NUM_ENC, NUM_SAMPLES); 
+    else
+        WaveFile = zeros(NUM_ENC, NUM_SAMPLES);
+    end
     
     for i=1:NUM_ENC
         PtFile(:, i) = ones(1, 16) * Pt(i);
@@ -77,15 +83,15 @@ if(FILE_GENERATION == 1)
     fileID = fopen([path PT_FILE_NAME],'w');
     
     for i=1:NUM_ENC
-        for j=1:15 
-            fprintf(fileID,'%s, ',PtFileStr(i, j));
+        for j=1:16 
+            fprintf(fileID,'%s ',PtFileStr(i, j));
         end
-        fprintf(fileID,'%s \n',PtFileStr(i, 16));
+        fprintf(fileID,'\n');
     end
     fclose(fileID);
     
     fileID = fopen([path WAVE_FILE_NAME],'w');
-    fwrite(fileID, WaveFile,'float');
+    fwrite(fileID, WaveFile','float');
     fclose(fileID);
     
 end
