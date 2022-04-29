@@ -35,6 +35,7 @@ FOLDER_NAME                 = datestr(now,'yyyymmmmdd_HHMMSS');
 PT_FILE_FORMAT              = '%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X \n';
 PT_FILE_NAME                = 'text_in.txt';
 WAVE_FILE_NAME              = 'wave.data';
+PARAMETER_FILE_NAME         = 'parameters.txt';
 
 %%% variables
 X1=1;
@@ -94,6 +95,11 @@ if(FILE_GENERATION == 1)
     fwrite(fileID, WaveFile','float');
     fclose(fileID);
     
+    fileID = fopen([path PARAMETER_FILE_NAME],'w');
+    fprintf(fileID,'KEY_INDEX = %d\n',KEY_INDEX);
+    fprintf(fileID,'POSITION_TO_ADD_POWER_VALUE = %d\n',POSITION_TO_ADD_POWER_VALUE);
+    fprintf(fileID,'ADD_NOISE = %d\n',ADD_NOISE);
+    fclose(fileID);
 end
     
 %% Conduct CPA Attacks
