@@ -36,6 +36,7 @@ PT_FILE_FORMAT              = '%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %
 PT_FILE_NAME                = 'text_in.txt';
 WAVE_FILE_NAME              = 'wave.data';
 PARAMETER_FILE_NAME         = 'parameters.txt';
+CPA_IMAGE_FILE_NAME         = 'CPA-results.png';
 
 %%% variables
 X1=1;
@@ -75,9 +76,22 @@ if(FILE_GENERATION == 1)
     for i=1:NUM_ENC
         PtFile(:, i) = ones(1, 16) * Pt(i);
     end
+    
     PtFile   = PtFile';
     WaveFile(:, POSITION_TO_ADD_POWER_VALUE+1) = P; 
-    PtFileStr = compose("%02X", PtFile);
+    
+    %% check whether compose function exist 
+    if (exist('compose'))
+        PtFileStr = strings([NUM_ENC, 16]);
+        for i=1:NUM_ENC
+           for j=1:16
+              PtFileStr(i, j) =  dec2hex(PtFile(i,j), 2);
+           end
+        end
+    else
+        PtFileStr = compose("%02X", PtFile);
+    end
+    
     %% create folder and file write
     [status, msg, msgID] = mkdir(FOLDER_NAME);
     path    = strcat('./', FOLDER_NAME, '/');
@@ -91,14 +105,19 @@ if(FILE_GENERATION == 1)
     end
     fclose(fileID);
     
+    %% write wave file
     fileID = fopen([path WAVE_FILE_NAME],'w');
     fwrite(fileID, WaveFile','float');
     fclose(fileID);
     
+    
+    %% write parameter file
     fileID = fopen([path PARAMETER_FILE_NAME],'w');
     fprintf(fileID,'KEY_INDEX = %d\n',KEY_INDEX);
     fprintf(fileID,'POSITION_TO_ADD_POWER_VALUE = %d\n',POSITION_TO_ADD_POWER_VALUE);
     fprintf(fileID,'ADD_NOISE = %d\n',ADD_NOISE);
+    fprintf(fileID,'NUMBER OF ENCRYPTIONS = %d\n',NUM_ENC);
+    fprintf(fileID,'NUMBER OF SAMPLES = %d\n',NUM_SAMPLES);
     fclose(fileID);
 end
     
@@ -137,5 +156,5 @@ ylabel('Corr. Coe. (r)');
 hold off
 end
 
-
-
+%% save CPA attack results as an image to wave folder
+saveas(gcf, [path CPA_IMAGE_FILE_NAME])
