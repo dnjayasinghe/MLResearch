@@ -22,10 +22,11 @@ sbox = [ ...
 %% Parameters
 NUM_ENC                     = 25000;  
 NUM_SAMPLES                 = 20;  %% how many samples need for
-SNR                         = 10; %% this value is in dB; so careful. 
+SNR_TRAIN                   = 0; %% this value is in dB; so careful. 
+SNR_ATTACK                  = 5; %% this value is in dB; so careful. 
 POSITION_TO_ADD_POWER_VALUE =  0; %[0 to NUMSAMPLES-1]
 KEY_INDEX                   =  15; %% [0 - 15]
-ADD_NOISE                   =  0;  %% 0 or 1  TODO
+ADD_NOISE                   =  1;  %% 0 or 1 
 FILE_GENERATION             =  1;  %% 0 or 1
 GENERATE_TRAINING_SET       =  1; 
 CPA_ATTACKS                 =  1;
@@ -40,7 +41,7 @@ WAVE_FILE_NAME              = 'wave.data';
 PARAMETER_FILE_NAME         = 'parameters.txt';
 CPA_IMAGE_FILE_NAME         = 'CPA-results.png';
 ATTACK_FOLDER_NAME          = 'attack';
-PROFILE_FOLDER_NAME         = 'profile'; 
+PROFILE_FOLDER_NAME         = 'training'; 
     
 %%% variables
 X1=1;
@@ -61,12 +62,12 @@ for i=1:NUM_ENC
     X1SB=sbox(AESFR+1);
     X1SBbin= dec2bin(bitxor(X1SB, 0));
     PowerUnfilt=sum(X1SBbin(:) == '1');
-    if (ADD_NOISE == 1)
-        P(i) = 8+awgn(PowerUnfilt, SNR, 'measured');   % TODO: change later 
-    else
-        P(i) = 8+(PowerUnfilt);
-    end
+    P(i) = 8+(PowerUnfilt);
     
+end
+%% Add noise to training data- amount is SNR_TRAIN
+if (ADD_NOISE == 1)
+    P = awgn(P, SNR_TRAIN, 'measured');    
 end
 
 if(FILE_GENERATION ==1)
@@ -135,11 +136,12 @@ for i=1:NUM_ENC
     fclose(fileID);
     
     
-    %% write parameter file
+    %% write training parameter file
     fileID = fopen([path PARAMETER_FILE_NAME],'w');
     fprintf(fileID,'KEY_INDEX = %d\n',KEY_INDEX);
     fprintf(fileID,'POSITION_TO_ADD_POWER_VALUE = %d\n',POSITION_TO_ADD_POWER_VALUE);
     fprintf(fileID,'ADD_NOISE = %d\n',ADD_NOISE);
+    fprintf(fileID,'NOISE = %d\n',SNR_TRAIN);
     fprintf(fileID,'NUMBER OF ENCRYPTIONS = %d\n',NUM_ENC);
     fprintf(fileID,'NUMBER OF SAMPLES = %d\n',NUM_SAMPLES);
     fclose(fileID);
@@ -158,12 +160,13 @@ for i=1:NUM_ENC
     X1SB=sbox(AESFR+1);
     X1SBbin= dec2bin(bitxor(X1SB, 0));
     PowerUnfilt=sum(X1SBbin(:) == '1');
-    if (ADD_NOISE == 1)
-        P(i) = 8+awgn(PowerUnfilt, SNR, 'measured');   % TODO: change later 
-    else
-        P(i) = 8+(PowerUnfilt);
-    end
-    
+    P(i) = 8+(PowerUnfilt);
+   
+end
+%% Add noise to training data- amount is SNR_ATTACK
+if (ADD_NOISE == 1)
+    Pold= P;
+    P = awgn(P, SNR_ATTACK, 'measured'); 
 end
 
 %% Save to file 
@@ -214,11 +217,12 @@ if(FILE_GENERATION == 1)
     fclose(fileID);
     
     
-    %% write parameter file
+    %% write attack parameter file
     fileID = fopen([path PARAMETER_FILE_NAME],'w');
     fprintf(fileID,'KEY_INDEX = %d\n',KEY_INDEX);
     fprintf(fileID,'POSITION_TO_ADD_POWER_VALUE = %d\n',POSITION_TO_ADD_POWER_VALUE);
     fprintf(fileID,'ADD_NOISE = %d\n',ADD_NOISE);
+    fprintf(fileID,'NOISE = %d\n',SNR_ATTACK);
     fprintf(fileID,'NUMBER OF ENCRYPTIONS = %d\n',NUM_ENC);
     fprintf(fileID,'NUMBER OF SAMPLES = %d\n',NUM_SAMPLES);
     fclose(fileID);
