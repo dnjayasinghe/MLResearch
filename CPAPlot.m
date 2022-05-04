@@ -22,11 +22,13 @@ sbox = [ ...
 %% Parameters
 NUM_ENC                     = 25000;  
 NUM_SAMPLES                 = 20;  %% how many samples need for
-SNR                         = 10; %% this value is in dB; so careful. 
+SNR_TRAIN                   = 0; %% this value is in dB; so careful. 
+SNR_ATTACK                  = 5; %% this value is in dB; so careful. 
 POSITION_TO_ADD_POWER_VALUE =  0; %[0 to NUMSAMPLES-1]
 KEY_INDEX                   =  15; %% [0 - 15]
-ADD_NOISE                   =  0;  %% 0 or 1  TODO
+ADD_NOISE                   =  1;  %% 0 or 1 
 FILE_GENERATION             =  1;  %% 0 or 1
+GENERATE_TRAINING_SET       =  1; 
 CPA_ATTACKS                 =  1;
 PLOT_RESULTS                =  1;
 WAVE_FILE_RANDOMFILL        =  1;
@@ -34,10 +36,13 @@ KEY=hex2dec(['00'; '01'; '02'; '03'; '04'; '05'; '06'; '07'; '08'; '09'; '0a'; '
 FOLDER_NAME                 = datestr(now,'yyyymmmmdd_HHMMSS');
 PT_FILE_FORMAT              = '%02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X, %02X \n';
 PT_FILE_NAME                = 'text_in.txt';
+RKEY_FILE_NAME              = 'Rkeys.txt';
 WAVE_FILE_NAME              = 'wave.data';
 PARAMETER_FILE_NAME         = 'parameters.txt';
 CPA_IMAGE_FILE_NAME         = 'CPA-results.png';
-
+ATTACK_FOLDER_NAME          = 'attack';
+PROFILE_FOLDER_NAME         = 'training'; 
+    
 %%% variables
 X1=1;
 Pt=0;
@@ -45,9 +50,108 @@ Pt=0;
 HWarray=ones(8, NUM_ENC);
 M= ones(9, NUM_ENC);
 
-
 %% generate PTs and Power 
+%% training set
+if(GENERATE_TRAINING_SET == 1)
+for i=1:NUM_ENC
+   
+    X1=randi([0,255],1);
+    RKEY(i)=randi([0,255],1);
+    Pt(i) = X1;
+    AESFR = bitxor(X1,RKEY(i));
+    X1SB=sbox(AESFR+1);
+    X1SBbin= dec2bin(bitxor(X1SB, 0));
+    PowerUnfilt=sum(X1SBbin(:) == '1');
+    P(i) = 8+(PowerUnfilt);
+    
+end
+%% Add noise to training data- amount is SNR_TRAIN
+if (ADD_NOISE == 1)
+    P = awgn(P, SNR_TRAIN, 'measured');    
+end
 
+if(FILE_GENERATION ==1)
+    PtFile   = ones(16, NUM_ENC);
+    KeyFile   = ones(16, NUM_ENC);
+
+    if(WAVE_FILE_RANDOMFILL==1)
+        WaveFile = randi(16, NUM_ENC, NUM_SAMPLES); 
+    else
+        WaveFile = zeros(NUM_ENC, NUM_SAMPLES);
+    end
+    
+    for i=1:NUM_ENC
+        PtFile(:, i) = ones(1, 16) * Pt(i);
+        KeyFile(:,i) = ones(1, 16) * RKEY(i);
+
+    end
+    
+    PtFile   = PtFile';
+    KeyFile  = KeyFile';
+    WaveFile(:, POSITION_TO_ADD_POWER_VALUE+1) = P; 
+    
+    %% check whether compose function exist 
+    if (exist('compose') == 0)
+        PtFileStr = strings([NUM_ENC, 16]);
+        KeyFileStr = strings([NUM_ENC, 16]);
+        for i=1:NUM_ENC
+           for j=1:16
+              PtFileStr(i, j) =  dec2hex(PtFile(i,j), 2);
+              KeyFileStr(i, j) =  dec2hex(KeyFile(i,j), 2);
+           end
+        end
+    else
+        PtFileStr  = compose("%02X", PtFile);
+        KeyFileStr = compose("%02X", KeyFile);
+    end
+    
+    %% create folder and file write
+    [status, msg, msgID] = mkdir(FOLDER_NAME);
+    [status, msg, msgID] = mkdir(FOLDER_NAME, PROFILE_FOLDER_NAME);
+    path    = strcat('./', FOLDER_NAME, '/', PROFILE_FOLDER_NAME, '/');
+    fileID = fopen([path PT_FILE_NAME],'w');
+    
+    for i=1:NUM_ENC
+        for j=1:16 
+            fprintf(fileID,'%s ',PtFileStr(i, j));
+        end
+        fprintf(fileID,'\n');
+    end
+    fclose(fileID);
+
+%% Write Key file
+fileID = fopen([path RKEY_FILE_NAME],'w');    
+for i=1:NUM_ENC
+        for j=1:16 
+            fprintf(fileID,'%s ',KeyFileStr(i, j));
+        end
+        fprintf(fileID,'\n');
+    end
+    fclose(fileID);
+
+    
+    %% write wave file
+    fileID = fopen([path WAVE_FILE_NAME],'w');
+    fwrite(fileID, WaveFile','float');
+    fclose(fileID);
+    
+    
+    %% write training parameter file
+    fileID = fopen([path PARAMETER_FILE_NAME],'w');
+    fprintf(fileID,'KEY_INDEX = %d\n',KEY_INDEX);
+    fprintf(fileID,'POSITION_TO_ADD_POWER_VALUE = %d\n',POSITION_TO_ADD_POWER_VALUE);
+    fprintf(fileID,'ADD_NOISE = %d\n',ADD_NOISE);
+    fprintf(fileID,'NOISE = %d\n',SNR_TRAIN);
+    fprintf(fileID,'NUMBER OF ENCRYPTIONS = %d\n',NUM_ENC);
+    fprintf(fileID,'NUMBER OF SAMPLES = %d\n',NUM_SAMPLES);
+    fclose(fileID);
+
+end
+
+end
+
+
+%% attack set
 for i=1:NUM_ENC
    
     X1=randi([0,255],1);
@@ -56,12 +160,13 @@ for i=1:NUM_ENC
     X1SB=sbox(AESFR+1);
     X1SBbin= dec2bin(bitxor(X1SB, 0));
     PowerUnfilt=sum(X1SBbin(:) == '1');
-    if (ADD_NOISE == 1)
-        P(i) = 8+awgn(PowerUnfilt, SNR, 'measured');   % TODO: change later 
-    else
-        P(i) = 8+(PowerUnfilt);
-    end
-    
+    P(i) = 8+(PowerUnfilt);
+   
+end
+%% Add noise to training data- amount is SNR_ATTACK
+if (ADD_NOISE == 1)
+    Pold= P;
+    P = awgn(P, SNR_ATTACK, 'measured'); 
 end
 
 %% Save to file 
@@ -81,7 +186,7 @@ if(FILE_GENERATION == 1)
     WaveFile(:, POSITION_TO_ADD_POWER_VALUE+1) = P; 
     
     %% check whether compose function exist 
-    if (exist('compose'))
+    if (exist('compose') == 0)
         PtFileStr = strings([NUM_ENC, 16]);
         for i=1:NUM_ENC
            for j=1:16
@@ -93,8 +198,9 @@ if(FILE_GENERATION == 1)
     end
     
     %% create folder and file write
-    [status, msg, msgID] = mkdir(FOLDER_NAME);
-    path    = strcat('./', FOLDER_NAME, '/');
+    
+    [status, msg, msgID] = mkdir(FOLDER_NAME, ATTACK_FOLDER_NAME);
+    path    = strcat('./', FOLDER_NAME, '/', ATTACK_FOLDER_NAME, '/');
     fileID = fopen([path PT_FILE_NAME],'w');
     
     for i=1:NUM_ENC
@@ -111,11 +217,12 @@ if(FILE_GENERATION == 1)
     fclose(fileID);
     
     
-    %% write parameter file
+    %% write attack parameter file
     fileID = fopen([path PARAMETER_FILE_NAME],'w');
     fprintf(fileID,'KEY_INDEX = %d\n',KEY_INDEX);
     fprintf(fileID,'POSITION_TO_ADD_POWER_VALUE = %d\n',POSITION_TO_ADD_POWER_VALUE);
     fprintf(fileID,'ADD_NOISE = %d\n',ADD_NOISE);
+    fprintf(fileID,'NOISE = %d\n',SNR_ATTACK);
     fprintf(fileID,'NUMBER OF ENCRYPTIONS = %d\n',NUM_ENC);
     fprintf(fileID,'NUMBER OF SAMPLES = %d\n',NUM_SAMPLES);
     fclose(fileID);
