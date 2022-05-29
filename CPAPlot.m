@@ -62,12 +62,15 @@ for i=1:NUM_ENC
     X1SB=sbox(AESFR+1);
     X1SBbin= dec2bin(bitxor(X1SB, 0));
     PowerUnfilt=sum(X1SBbin(:) == '1');
-    P(i) = 8+(PowerUnfilt);
+    P(i) = (PowerUnfilt);
     
 end
 %% Add noise to training data- amount is SNR_TRAIN
 if (ADD_NOISE == 1)
-    P = awgn(P, SNR_TRAIN, 'measured');    
+    %P = awgn(P, SNR_TRAIN, 'measured'); %% not used
+    P = awgn(P, SNR_TRAIN, 0);
+    P= P+ abs(min(P));
+    P=round(P+10);
 end
 
 if(FILE_GENERATION ==1)
@@ -160,13 +163,16 @@ for i=1:NUM_ENC
     X1SB=sbox(AESFR+1);
     X1SBbin= dec2bin(bitxor(X1SB, 0));
     PowerUnfilt=sum(X1SBbin(:) == '1');
-    P(i) = 8+(PowerUnfilt);
+    P(i) = (PowerUnfilt);
    
 end
 %% Add noise to training data- amount is SNR_ATTACK
 if (ADD_NOISE == 1)
     Pold= P;
-    P = awgn(P, SNR_ATTACK, 'measured'); 
+    %P = awgn(P, SNR_ATTACK, 'measured'); %% not used
+    P = awgn(P, SNR_ATTACK, 0);
+    P= P+ abs(min(P));
+    P=round(P+10);
 end
 
 %% Save to file 
