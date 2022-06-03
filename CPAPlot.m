@@ -95,8 +95,10 @@ if(FILE_GENERATION ==1)
     
     %% check whether compose function exist 
     if (exist('compose') == 0)
-        PtFileStr = strings([NUM_ENC, 16]);
-        KeyFileStr = strings([NUM_ENC, 16]);
+        if (exist('strings') == 1)  %% this check the is redundant; 
+            PtFileStr = strings([NUM_ENC, 16]);
+            KeyFileStr = strings([NUM_ENC, 16]);
+        end
         for i=1:NUM_ENC
            for j=1:16
               PtFileStr(i, j) =  dec2hex(PtFile(i,j), 2);
@@ -193,7 +195,9 @@ if(FILE_GENERATION == 1)
     
     %% check whether compose function exist 
     if (exist('compose') == 0)
-        PtFileStr = strings([NUM_ENC, 16]);
+        if (exist('strings') == 1) %% this check the is redundant;
+            PtFileStr = strings([NUM_ENC, 16]);
+        end
         for i=1:NUM_ENC
            for j=1:16
               PtFileStr(i, j) =  dec2hex(PtFile(i,j), 2);
