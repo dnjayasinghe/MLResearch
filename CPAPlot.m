@@ -106,8 +106,8 @@ if(FILE_GENERATION ==1)
            end
         end
     else
-        PtFileStr  = compose("%02X", PtFile);
-        KeyFileStr = compose("%02X", KeyFile);
+        PtFileStr  = compose('%02X', PtFile);
+        KeyFileStr = compose('%02X', KeyFile);
     end
     
     %% create folder and file write
@@ -204,7 +204,7 @@ if(FILE_GENERATION == 1)
            end
         end
     else
-        PtFileStr = compose("%02X", PtFile);
+        PtFileStr = compose('%02X', PtFile);
     end
     
     %% create folder and file write
