@@ -95,14 +95,14 @@ if(FILE_GENERATION ==1)
     
     %% check whether compose function exist 
     if (exist('compose') == 0)
-        if (exist('strings') == 1)  %% this check the is redundant; 
-            PtFileStr = strings([NUM_ENC, 16]);
-            KeyFileStr = strings([NUM_ENC, 16]);
+        if (exist('strings') > 0)  %% this check the is redundant; 
+            PtFileStr = cell([NUM_ENC, 16]);
+            KeyFileStr = cell([NUM_ENC, 16]);
         end
         for i=1:NUM_ENC
            for j=1:16
-              PtFileStr(i, j) =  dec2hex(PtFile(i,j), 2);
-              KeyFileStr(i, j) =  dec2hex(KeyFile(i,j), 2);
+              PtFileStr(i, j) =  {dec2hex(PtFile(i,j), 2)};
+              KeyFileStr(i, j) =  {dec2hex(KeyFile(i,j), 2)};
            end
         end
     else
@@ -118,7 +118,7 @@ if(FILE_GENERATION ==1)
     
     for i=1:NUM_ENC
         for j=1:16 
-            fprintf(fileID,'%s ',PtFileStr(i, j));
+            fprintf(fileID,'%s ', char(PtFileStr(i, j)));
         end
         fprintf(fileID,'\n');
     end
@@ -128,7 +128,7 @@ if(FILE_GENERATION ==1)
 fileID = fopen([path RKEY_FILE_NAME],'w');    
 for i=1:NUM_ENC
         for j=1:16 
-            fprintf(fileID,'%s ',KeyFileStr(i, j));
+            fprintf(fileID,'%s ', char(KeyFileStr(i, j)));
         end
         fprintf(fileID,'\n');
     end
@@ -195,12 +195,12 @@ if(FILE_GENERATION == 1)
     
     %% check whether compose function exist 
     if (exist('compose') == 0)
-        if (exist('strings') == 1) %% this check the is redundant;
-            PtFileStr = strings([NUM_ENC, 16]);
+        if (exist('strings') > 0) %% this check the is redundant;
+            PtFileStr = cell([NUM_ENC, 16]);
         end
         for i=1:NUM_ENC
            for j=1:16
-              PtFileStr(i, j) =  dec2hex(PtFile(i,j), 2);
+              PtFileStr(i, j) =  {dec2hex(PtFile(i,j), 2)};
            end
         end
     else
@@ -215,7 +215,7 @@ if(FILE_GENERATION == 1)
     
     for i=1:NUM_ENC
         for j=1:16 
-            fprintf(fileID,'%s ',PtFileStr(i, j));
+            fprintf(fileID,'%s ', char(PtFileStr(i, j)));
         end
         fprintf(fileID,'\n');
     end
